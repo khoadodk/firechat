@@ -3,7 +3,7 @@ import { Switch, Route, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 
 import firebase from "./firebase";
-import { setUser } from "./actions";
+import { setUser, clearUser } from "./actions";
 
 import App from "./components/App";
 import Spinner from "./components/Spinner";
@@ -19,6 +19,9 @@ class Routes extends React.Component {
         // console.log("ISLOADING", this.props.isLoading);
         this.props.setUser(user);
         this.props.history.push("/");
+      } else {
+        this.props.clearUser();
+        this.props.history.push("/login");
       }
     });
   }
@@ -41,4 +44,7 @@ class Routes extends React.Component {
 const mapStateToProps = (state) => {
   return { isLoading: state.user.isLoading };
 };
-export default withRouter(connect(mapStateToProps, { setUser })(Routes));
+
+export default withRouter(
+  connect(mapStateToProps, { setUser, clearUser })(Routes)
+);
