@@ -9,6 +9,7 @@ import {
   Icon,
 } from "semantic-ui-react";
 import { Link } from "react-router-dom";
+import md5 from "md5";
 
 import firebase from "../../firebase";
 
@@ -20,6 +21,8 @@ class Register extends Component {
     confirmPassword: "",
     errors: [],
     loading: false,
+    // ref to the 'users' collection in firestore db
+    usersRef: firebase.database().ref("users"),
   };
 
   isFormValid = () => {
@@ -69,16 +72,45 @@ class Register extends Component {
         .auth()
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
         .then((createdUser) => {
-          this.setState({ loading: false });
           console.log(createdUser);
+          //Update the user authentication info
+          createdUser.user
+            .updateProfile({
+              displayName: this.state.username,
+              photoURL: `http://gravatar.com/avatar/${md5(
+                createdUser.user.email
+              )}?d=identicon`,
+            })
+            // Store user info into db
+            .then(() =>
+              this.saveUser(createdUser).then(() => {
+                console.log("user saved");
+              })
+            )
+            .catch((err) => {
+              console.error(err);
+              this.setState({
+                errors: this.state.errors.concat(err),
+                loading: false,
+              });
+            });
         })
-        .catch((error) => {
+        .then(() => this.setState({ loading: false }))
+        .catch((err) => {
           this.setState({
             loading: false,
-            errors: this.state.errors.concat(error),
+            errors: this.state.errors.concat(err),
           });
         });
     }
+  };
+
+  // save the user in the realtime db
+  saveUser = (createdUser) => {
+    return this.state.usersRef.child(createdUser.user.uid).set({
+      name: createdUser.user.displayName,
+      avatar: createdUser.user.photoURL,
+    });
   };
 
   handleInputErrors = (errors, inputName) => {
@@ -99,11 +131,10 @@ class Register extends Component {
       loading,
     } = this.state;
 
-    console.log("Error", errors);
     return (
       <Grid textAlign="center" verticalAlign="middle" className="app">
         <Grid.Column style={{ maxWidth: 450 }}>
-          <Header as="h2" icon color="orange" textAlign="center">
+          <Header as="h1" icon color="orange" textAlign="center">
             <Icon name="rocketchat" color="green" />
             Register for Fire Chat
           </Header>
