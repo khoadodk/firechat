@@ -1,4 +1,6 @@
-import React, { Component } from "react";
+import React from "react";
+import firebase from "../../firebase";
+import md5 from "md5";
 import {
   Grid,
   Form,
@@ -9,25 +11,22 @@ import {
   Icon,
 } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import md5 from "md5";
 
-import firebase from "../../firebase";
-
-class Register extends Component {
+class Register extends React.Component {
   state = {
     username: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    passwordConfirmation: "",
     errors: [],
     loading: false,
-    // ref to the 'users' collection in firestore db
     usersRef: firebase.database().ref("users"),
   };
 
   isFormValid = () => {
     let errors = [];
     let error;
+
     if (this.isFormEmpty(this.state)) {
       error = { message: "Fill in all fields" };
       this.setState({ errors: errors.concat(error) });
@@ -41,16 +40,19 @@ class Register extends Component {
     }
   };
 
-  isFormEmpty = ({ username, email, password, confirmPassword }) => {
+  isFormEmpty = ({ username, email, password, passwordConfirmation }) => {
     return (
-      !username.length || !email.length || !password.length || !confirmPassword
+      !username.length ||
+      !email.length ||
+      !password.length ||
+      !passwordConfirmation.length
     );
   };
 
-  isPasswordValid = ({ password, confirmPassword }) => {
-    if (password.length < 6 || confirmPassword.length < 6) {
+  isPasswordValid = ({ password, passwordConfirmation }) => {
+    if (password.length < 6 || passwordConfirmation.length < 6) {
       return false;
-    } else if (password !== confirmPassword) {
+    } else if (password !== passwordConfirmation) {
       return false;
     } else {
       return true;
@@ -73,7 +75,6 @@ class Register extends Component {
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
         .then((createdUser) => {
           console.log(createdUser);
-          //Update the user authentication info
           createdUser.user
             .updateProfile({
               displayName: this.state.username,
@@ -81,12 +82,11 @@ class Register extends Component {
                 createdUser.user.email
               )}?d=identicon`,
             })
-            // Store user info into db
-            .then(() =>
+            .then(() => {
               this.saveUser(createdUser).then(() => {
                 console.log("user saved");
-              })
-            )
+              });
+            })
             .catch((err) => {
               console.error(err);
               this.setState({
@@ -95,17 +95,16 @@ class Register extends Component {
               });
             });
         })
-        .then(() => this.setState({ loading: false }))
         .catch((err) => {
+          console.error(err);
           this.setState({
-            loading: false,
             errors: this.state.errors.concat(err),
+            loading: false,
           });
         });
     }
   };
 
-  // save the user in the realtime db
   saveUser = (createdUser) => {
     return this.state.usersRef.child(createdUser.user.uid).set({
       name: createdUser.user.displayName,
@@ -113,7 +112,7 @@ class Register extends Component {
     });
   };
 
-  handleInputErrors = (errors, inputName) => {
+  handleInputError = (errors, inputName) => {
     return errors.some((error) =>
       error.message.toLowerCase().includes(inputName)
     )
@@ -124,9 +123,9 @@ class Register extends Component {
   render() {
     const {
       username,
-      password,
       email,
-      confirmPassword,
+      password,
+      passwordConfirmation,
       errors,
       loading,
     } = this.state;
@@ -135,57 +134,63 @@ class Register extends Component {
       <Grid textAlign="center" verticalAlign="middle" className="app">
         <Grid.Column style={{ maxWidth: 450 }}>
           <Header as="h1" icon color="orange" textAlign="center">
-            <Icon name="rocketchat" color="green" />
+            <Icon name="comment alternate outline" color="orange" />
             Register for Fire Chat
           </Header>
-          <Form size="large" onSubmit={this.handleSubmit}>
+          <Form onSubmit={this.handleSubmit} size="large">
             <Segment stacked>
               <Form.Input
                 fluid
+                name="username"
                 icon="user"
                 iconPosition="left"
-                name="username"
                 placeholder="Username"
-                value={username}
                 onChange={this.handleChange}
+                value={username}
+                type="text"
               />
+
               <Form.Input
                 fluid
+                name="email"
                 icon="mail"
                 iconPosition="left"
-                name="email"
-                placeholder="Email"
-                value={email}
+                placeholder="Email Address"
                 onChange={this.handleChange}
-                className={this.handleInputErrors(errors, "email")}
+                value={email}
+                className={this.handleInputError(errors, "email")}
+                type="email"
               />
+
               <Form.Input
                 fluid
+                name="password"
                 icon="lock"
                 iconPosition="left"
-                name="password"
-                type="password"
                 placeholder="Password"
-                value={password}
                 onChange={this.handleChange}
-                className={this.handleInputErrors(errors, "password")}
+                value={password}
+                className={this.handleInputError(errors, "password")}
+                type="password"
               />
+
               <Form.Input
                 fluid
+                name="passwordConfirmation"
                 icon="repeat"
                 iconPosition="left"
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
+                placeholder="Password Confirmation"
                 onChange={this.handleChange}
-                className={this.handleInputErrors(errors, "password")}
+                value={passwordConfirmation}
+                className={this.handleInputError(errors, "password")}
+                type="password"
               />
+
               <Button
                 disabled={loading}
                 className={loading ? "loading" : ""}
-                fluid
                 color="orange"
+                fluid
                 size="large"
               >
                 Submit
@@ -199,7 +204,7 @@ class Register extends Component {
             </Message>
           )}
           <Message>
-            Already register? <Link to="/login">Log in</Link>
+            Already a user? <Link to="/login">Login</Link>
           </Message>
         </Grid.Column>
       </Grid>

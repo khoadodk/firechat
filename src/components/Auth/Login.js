@@ -1,4 +1,5 @@
-import React, { Component } from "react";
+import React from "react";
+import firebase from "../../firebase";
 import {
   Grid,
   Form,
@@ -9,9 +10,8 @@ import {
   Icon,
 } from "semantic-ui-react";
 import { Link } from "react-router-dom";
-import firebase from "../../firebase";
 
-class Login extends Component {
+class Login extends React.Component {
   state = {
     email: "",
     password: "",
@@ -33,20 +33,22 @@ class Login extends Component {
       firebase
         .auth()
         .signInWithEmailAndPassword(this.state.email, this.state.password)
-        .then((signInUser) => {
-          console.log(signInUser);
+        .then((signedInUser) => {
+          console.log(signedInUser);
         })
         .catch((err) => {
+          console.error(err);
           this.setState({
-            loading: false,
             errors: this.state.errors.concat(err),
+            loading: false,
           });
         });
     }
   };
 
   isFormValid = ({ email, password }) => email && password;
-  handleInputErrors = (errors, inputName) => {
+
+  handleInputError = (errors, inputName) => {
     return errors.some((error) =>
       error.message.toLowerCase().includes(inputName)
     )
@@ -55,43 +57,46 @@ class Login extends Component {
   };
 
   render() {
-    const { password, email, errors, loading } = this.state;
+    const { email, password, errors, loading } = this.state;
 
     return (
       <Grid textAlign="center" verticalAlign="middle" className="app">
         <Grid.Column style={{ maxWidth: 450 }}>
           <Header as="h1" icon color="violet" textAlign="center">
-            <Icon name="rocketchat" color="green" />
-            Log in with Fire Chat
+            <Icon name="comment alternate outline" color="violet" />
+            Login to Fire Chat
           </Header>
-          <Form size="large" onSubmit={this.handleSubmit}>
+          <Form onSubmit={this.handleSubmit} size="large">
             <Segment stacked>
               <Form.Input
                 fluid
+                name="email"
                 icon="mail"
                 iconPosition="left"
-                name="email"
-                placeholder="Email"
-                value={email}
+                placeholder="Email Address"
                 onChange={this.handleChange}
-                className={this.handleInputErrors(errors, "email")}
+                value={email}
+                className={this.handleInputError(errors, "email")}
+                type="email"
               />
+
               <Form.Input
                 fluid
+                name="password"
                 icon="lock"
                 iconPosition="left"
-                name="password"
-                type="password"
                 placeholder="Password"
-                value={password}
                 onChange={this.handleChange}
-                className={this.handleInputErrors(errors, "password")}
+                value={password}
+                className={this.handleInputError(errors, "password")}
+                type="password"
               />
+
               <Button
                 disabled={loading}
                 className={loading ? "loading" : ""}
-                fluid
                 color="violet"
+                fluid
                 size="large"
               >
                 Submit
@@ -105,8 +110,7 @@ class Login extends Component {
             </Message>
           )}
           <Message>
-            Don't have an account with us?{" "}
-            <Link to="/register">Register here</Link>
+            Don't have an account? <Link to="/register">Register</Link>
           </Message>
         </Grid.Column>
       </Grid>

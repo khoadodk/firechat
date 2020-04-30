@@ -1,26 +1,29 @@
-import React, { Component } from "react";
+import React from "react";
+import firebase from "../../firebase";
 import { Grid, Header, Icon, Dropdown, Image } from "semantic-ui-react";
 
-import firebase from "../../firebase";
+class UserPanel extends React.Component {
+  state = {
+    user: this.props.currentUser,
+  };
 
-class UserPanel extends Component {
   dropdownOptions = () => [
     {
       key: "user",
       text: (
         <span>
-          Sign in as <strong>{this.props.currentUser.displayName}</strong>
+          Signed in as <strong>{this.state.user.displayName}</strong>
         </span>
       ),
       disabled: true,
     },
     {
       key: "avatar",
-      text: <span>Change avatar</span>,
+      text: <span>Change Avatar</span>,
     },
     {
       key: "signout",
-      text: <span onClick={this.handleSignout}>Sign out</span>,
+      text: <span onClick={this.handleSignout}>Sign Out</span>,
     },
   ];
 
@@ -28,34 +31,35 @@ class UserPanel extends Component {
     firebase
       .auth()
       .signOut()
-      .then(() => console.log("Sign out!"));
+      .then(() => console.log("signed out!"));
   };
 
   render() {
-    // console.log(this.props.currentUser);
-    const { displayName, photoURL } = this.props.currentUser;
+    const { user } = this.state;
 
     return (
       <Grid style={{ background: "#4c3c4c" }}>
         <Grid.Column>
-          {/* App Header */}
           <Grid.Row style={{ padding: "1.2em", margin: 0 }}>
+            {/* App Header */}
             <Header inverted floated="left" as="h2">
               <Icon name="gripfire" />
+              <Header.Content>Fire Chat</Header.Content>
+            </Header>
+
+            {/* User Dropdown  */}
+            <Header style={{ padding: "0.25em" }} as="h4" inverted>
+              <Dropdown
+                trigger={
+                  <span>
+                    <Image src={user.photoURL} spaced="right" avatar />
+                    {user.displayName}
+                  </span>
+                }
+                options={this.dropdownOptions()}
+              />
             </Header>
           </Grid.Row>
-          {/* User drop down */}
-          <Header inverted style={{ padding: "0.25em" }} as="h4">
-            <Dropdown
-              trigger={
-                <span>
-                  <Image src={photoURL} spaced="right" avatar />
-                  {displayName}
-                </span>
-              }
-              options={this.dropdownOptions()}
-            />
-          </Header>
         </Grid.Column>
       </Grid>
     );
