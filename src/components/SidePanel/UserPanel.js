@@ -32,7 +32,7 @@ class UserPanel extends Component {
   };
 
   render() {
-    console.log(this.props.currentUser);
+    // console.log(this.props.currentUser);
     const { displayName, photoURL } = this.props.currentUser;
 
     return (
