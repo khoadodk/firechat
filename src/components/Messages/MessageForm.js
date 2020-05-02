@@ -47,13 +47,13 @@ class MessageForm extends React.Component {
   };
 
   sendMessage = () => {
-    const { messagesRef } = this.props;
+    const { getMessagesRef } = this.props;
     const { message, channel } = this.state;
 
     if (message) {
       this.setState({ loading: true });
       // ref to channel id
-      messagesRef
+      getMessagesRef()
         .child(channel.id)
         .push()
         .set(this.createMessage())
@@ -90,10 +90,20 @@ class MessageForm extends React.Component {
       });
   };
 
+  // set the path to private or public chat
+  getPath = () => {
+    if (this.props.isPrivateChannel) {
+      return `chat/private-${this.state.channel.id}`;
+    } else {
+      return "chat/public";
+    }
+  };
+
   uploadFile = (file, metadata) => {
     const pathToUpload = this.state.channel.id;
-    const ref = this.props.messagesRef;
-    const filePath = `chat/public/${uuidv4()}.jpg`;
+    // store images in either public or private ref
+    const ref = this.props.getMessagesRef();
+    const filePath = `${this.getPath}/public/${uuidv4()}.jpg`;
     // https://firebase.google.com/docs/storage/web/upload-files
     this.setState(
       {
@@ -101,7 +111,7 @@ class MessageForm extends React.Component {
         uploadTask: this.state.storageRef.child(filePath).put(file, metadata),
       },
       () => {
-        this.state.uploadTask.on(
+        this.state.uploadTask.on5(
           "state_changed",
           (snapShot) => {
             const percentUpload = Math.round(

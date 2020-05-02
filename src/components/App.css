@@ -8,7 +8,7 @@ body,
 
 /* Messages.js */
 .messages {
-  height: 440px;
+  height: calc(100vh - 270px);
   overflow-y: scroll;
 }
 
@@ -20,6 +20,11 @@ body,
   left: 0;
   right: 1em;
   z-index: 200;
+}
+
+/* Sidepanel.js and Channels.js */
+.menu {
+  padding-bottom: 2em;
 }
 
 /* Message.js */
