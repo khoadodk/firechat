@@ -1,27 +1,27 @@
 import React from "react";
+import uuidv4 from "uuid/v4";
 import firebase from "../../firebase";
 import { Segment, Button, Input } from "semantic-ui-react";
-import uuidv4 from "uuid/v4";
 
 import FileModal from "./FileModal";
 import ProgressBar from "./ProgessBar";
 
 class MessageForm extends React.Component {
   state = {
+    storageRef: firebase.storage().ref(),
+    uploadTask: null,
+    uploadState: "",
+    percentUploaded: 0,
     message: "",
     channel: this.props.currentChannel,
     user: this.props.currentUser,
     loading: false,
     errors: [],
     modal: false,
-    uploadState: "",
-    uploadTask: null,
-    percentUpload: 0,
-    // root ref to store image
-    storageRef: firebase.storage().ref(),
   };
 
   openModal = () => this.setState({ modal: true });
+
   closeModal = () => this.setState({ modal: false });
 
   handleChange = (event) => {
@@ -37,11 +37,10 @@ class MessageForm extends React.Component {
         avatar: this.state.user.photoURL,
       },
     };
-    // Add the props name image/content to the message object
     if (fileUrl !== null) {
       message["image"] = fileUrl;
     } else {
-      message["content"] = this.state.messsage;
+      message["content"] = this.state.message;
     }
     return message;
   };
@@ -52,7 +51,6 @@ class MessageForm extends React.Component {
 
     if (message) {
       this.setState({ loading: true });
-      // ref to channel id
       getMessagesRef()
         .child(channel.id)
         .push()
@@ -74,6 +72,61 @@ class MessageForm extends React.Component {
     }
   };
 
+  getPath = () => {
+    if (this.props.isPrivateChannel) {
+      return `chat/private-${this.state.channel.id}`;
+    } else {
+      return "chat/public";
+    }
+  };
+
+  uploadFile = (file, metadata) => {
+    const pathToUpload = this.state.channel.id;
+    const ref = this.props.getMessagesRef();
+    const filePath = `${this.getPath()}/${uuidv4()}.jpg`;
+
+    this.setState(
+      {
+        uploadState: "uploading",
+        uploadTask: this.state.storageRef.child(filePath).put(file, metadata),
+      },
+      () => {
+        this.state.uploadTask.on(
+          "state_changed",
+          (snap) => {
+            const percentUploaded = Math.round(
+              (snap.bytesTransferred / snap.totalBytes) * 100
+            );
+            this.setState({ percentUploaded });
+          },
+          (err) => {
+            console.error(err);
+            this.setState({
+              errors: this.state.errors.concat(err),
+              uploadState: "error",
+              uploadTask: null,
+            });
+          },
+          () => {
+            this.state.uploadTask.snapshot.ref
+              .getDownloadURL()
+              .then((downloadUrl) => {
+                this.sendFileMessage(downloadUrl, ref, pathToUpload);
+              })
+              .catch((err) => {
+                console.error(err);
+                this.setState({
+                  errors: this.state.errors.concat(err),
+                  uploadState: "error",
+                  uploadTask: null,
+                });
+              });
+          }
+        );
+      }
+    );
+  };
+
   sendFileMessage = (fileUrl, ref, pathToUpload) => {
     ref
       .child(pathToUpload)
@@ -90,64 +143,9 @@ class MessageForm extends React.Component {
       });
   };
 
-  // set the path to private or public chat
-  getPath = () => {
-    if (this.props.isPrivateChannel) {
-      return `chat/private-${this.state.channel.id}`;
-    } else {
-      return "chat/public";
-    }
-  };
-
-  uploadFile = (file, metadata) => {
-    const pathToUpload = this.state.channel.id;
-    // store images in either public or private ref
-    const ref = this.props.getMessagesRef();
-    const filePath = `${this.getPath}/public/${uuidv4()}.jpg`;
-    // https://firebase.google.com/docs/storage/web/upload-files
-    this.setState(
-      {
-        uploadState: "uploading",
-        uploadTask: this.state.storageRef.child(filePath).put(file, metadata),
-      },
-      () => {
-        this.state.uploadTask.on5(
-          "state_changed",
-          (snapShot) => {
-            const percentUpload = Math.round(
-              (snapShot.bytesTransferred / snapShot.totalBytes) * 100
-            );
-            this.setState({ percentUpload });
-          },
-          (err) => {
-            console.error(err);
-            this.setState({
-              errors: this.state.errors.concat(err),
-              uploadState: "error",
-              uploadTask: null,
-            });
-          },
-          () => {
-            this.state.uploadTask.snapshot.ref
-              .getDownloadURL()
-              .then((downloadURL) => {
-                this.sendFileMessage(downloadURL, ref, pathToUpload);
-              });
-          }
-        );
-      }
-    );
-  };
-
   render() {
-    const {
-      errors,
-      message,
-      loading,
-      modal,
-      uploadState,
-      percentUpload,
-    } = this.state;
+    // prettier-ignore
+    const { errors, message, loading, modal, uploadState, percentUploaded } = this.state;
 
     return (
       <Segment className="message__form">
@@ -177,11 +175,11 @@ class MessageForm extends React.Component {
           />
           <Button
             color="teal"
+            disabled={uploadState === "uploading"}
+            onClick={this.openModal}
             content="Upload Media"
             labelPosition="right"
             icon="cloud upload"
-            onClick={this.openModal}
-            disabled={uploadState === "uploading"}
           />
         </Button.Group>
         <FileModal
@@ -189,7 +187,10 @@ class MessageForm extends React.Component {
           closeModal={this.closeModal}
           uploadFile={this.uploadFile}
         />
-        <ProgressBar uploadState={uploadState} percentUpload={percentUpload} />
+        <ProgressBar
+          uploadState={uploadState}
+          percentUploaded={percentUploaded}
+        />
       </Segment>
     );
   }

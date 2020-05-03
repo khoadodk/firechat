@@ -29,6 +29,15 @@ class Messages extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    this.removeListeners();
+  }
+
+  removeListeners = () => {
+    this.state.messagesRef.off();
+    this.state.privateMessagesRef.off();
+  };
+
   addListeners = (channelId) => {
     this.addMessageListener(channelId);
   };
