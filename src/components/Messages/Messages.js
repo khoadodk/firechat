@@ -28,12 +28,14 @@ class Messages extends React.Component {
     isChannelStarred: false,
     connectedRef: firebase.database().ref(".info/connected"),
     typingUsers: [],
+    listeners: [],
   };
 
   componentDidMount() {
-    const { channel, user } = this.state;
+    const { channel, user, listeners } = this.state;
 
     if (channel && user) {
+      this.removeListeners(listeners);
       this.addListeners(channel.id);
       this.addUserStarsListener(channel.id, user.uid);
     }
@@ -41,6 +43,7 @@ class Messages extends React.Component {
 
   componentWillUnmount() {
     this.removeListeners();
+    this.state.connectedRef.off();
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -49,13 +52,29 @@ class Messages extends React.Component {
     }
   }
 
-  scrollToBottom = () => {
-    this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+  // START: customed remove listeners
+  removeListeners = (listeners) => {
+    listeners &&
+      listeners.forEach((listener) => {
+        listener.ref.child(listener.id).off(listener.event);
+      });
   };
 
-  removeListeners = () => {
-    this.state.messagesRef.off();
-    this.state.privateMessagesRef.off();
+  addToListeners = (id, ref, event) => {
+    const index = this.state.listeners.findIndex((listener) => {
+      return (
+        listener.id === id && listener.ref === ref && listener.event === event
+      );
+    });
+    if (index === -1) {
+      const newListener = { id, ref, event };
+      this.setState({ listeners: this.state.listeners.concat(newListener) });
+    }
+  };
+  // END: customed remove listener
+
+  scrollToBottom = () => {
+    this.messagesEnd.scrollIntoView({ behavior: "smooth" });
   };
 
   addListeners = (channelId) => {
@@ -76,6 +95,8 @@ class Messages extends React.Component {
         this.setState({ typingUsers });
       }
     });
+    // Add to listeners to remove later
+    this.addToListeners(channelId, typingRef, "child_added");
     // remove user if not typing
     typingRef.child(channelId).on("child_removed", (snap) => {
       const index = typingUsers.findIndex((user) => user.id === snap.key);
@@ -84,6 +105,8 @@ class Messages extends React.Component {
         this.setState({ typingUsers });
       }
     });
+    // Add to listeners to remove later
+    this.addToListeners(channelId, typingRef, "child_removed");
     // Remove user's online presense
     connectedRef.on("value", (snap) => {
       if (snap.val() === true) {
@@ -113,6 +136,8 @@ class Messages extends React.Component {
       this.countUsers(loadedMessages);
       this.countUserPosts(loadedMessages);
     });
+    // Add to listeners to remove later
+    this.addToListeners(channelId, ref, "child_added");
   };
 
   addUserStarsListener = (channelId, userId) => {

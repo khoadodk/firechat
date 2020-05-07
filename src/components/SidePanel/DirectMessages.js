@@ -21,6 +21,16 @@ class DirectMessages extends Component {
     }
   }
 
+  componentWillMount() {
+    this.removeListeners();
+  }
+
+  removeListeners = () => {
+    this.state.usersRef.off();
+    this.state.presenceRef.off();
+    this.state.connectedRef.off();
+  };
+
   addlisteners = (currentUserUid) => {
     let loadedUsers = [];
     // 1. Find all users and set the properties uid and stastus to user obj
