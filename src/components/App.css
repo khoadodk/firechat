@@ -22,6 +22,10 @@ body,
   z-index: 200;
 }
 
+.emojipicker {
+  position: absolute;
+}
+
 /* Sidepanel.js and Channels.js */
 .menu {
   padding-bottom: 2em;
