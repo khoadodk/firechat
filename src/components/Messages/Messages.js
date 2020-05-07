@@ -42,6 +42,16 @@ class Messages extends React.Component {
     this.removeListeners();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (this.messagesEnd) {
+      this.scrollToBottom();
+    }
+  }
+
+  scrollToBottom = () => {
+    this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+  };
+
   removeListeners = () => {
     this.state.messagesRef.off();
     this.state.privateMessagesRef.off();
@@ -273,6 +283,7 @@ class Messages extends React.Component {
               ? this.displayMessages(searchResults)
               : this.displayMessages(messages)}
             {this.displayTypingUsers(typingUsers)}
+            <div ref={(node) => (this.messagesEnd = node)}></div>
           </Comment.Group>
         </Segment>
 
