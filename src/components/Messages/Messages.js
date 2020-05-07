@@ -8,6 +8,7 @@ import MessageForm from "./MessageForm";
 import Message from "./Message";
 import { setUserPosts } from "../../actions";
 import Typing from "./Typing";
+import Skeleton from "./Skeleton";
 
 class Messages extends React.Component {
   state = {
@@ -250,6 +251,15 @@ class Messages extends React.Component {
       </div>
     ));
 
+  displayMessagesSkeleton = (loading) =>
+    loading ? (
+      <React.Fragment>
+        {[...Array(10)].map((_, i) => (
+          <Skeleton key={i} />
+        ))}
+      </React.Fragment>
+    ) : null;
+
   render() {
     const {
       messagesRef,
@@ -263,6 +273,7 @@ class Messages extends React.Component {
       privateChannel,
       isChannelStarred,
       typingUsers,
+      messagesLoading,
     } = this.state;
 
     return (
@@ -279,6 +290,7 @@ class Messages extends React.Component {
 
         <Segment>
           <Comment.Group className="messages">
+            {this.displayMessagesSkeleton(messagesLoading)}
             {searchTerm
               ? this.displayMessages(searchResults)
               : this.displayMessages(messages)}
