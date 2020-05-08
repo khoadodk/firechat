@@ -26,6 +26,7 @@ class UserPanel extends React.Component {
     metadata: {
       contentType: "image/jpeg",
     },
+    presenceRef: firebase.database().ref("presence"),
   };
 
   openModal = () => this.setState({ modal: true });
@@ -54,7 +55,7 @@ class UserPanel extends React.Component {
   uploadCroppedImage = () => {
     const { storageRef, userRef, blob, metadata } = this.state;
     storageRef
-      .child(`avatars/user-${userRef.uid}`)
+      .child(`avatars/users/${userRef.uid}`)
       .put(blob, metadata)
       .then((snap) => {
         snap.ref
@@ -82,10 +83,13 @@ class UserPanel extends React.Component {
   };
 
   handleSignout = () => {
+    // Remove presense ref on log out
+    this.state.presenceRef.child(this.state.user.uid).remove();
+
     firebase
       .auth()
       .signOut()
-      .then(() => console.log("signed out!"));
+      .then(() => console.log("sign out"));
   };
 
   handleFileChange = (event) => {
@@ -114,7 +118,6 @@ class UserPanel extends React.Component {
   render() {
     const { user, modal, previewImage, croppedImage } = this.state;
     const { primaryColor } = this.props;
-
     return (
       <Grid style={{ background: primaryColor }}>
         <Grid.Column>

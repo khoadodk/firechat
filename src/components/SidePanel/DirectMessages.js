@@ -10,18 +10,18 @@ class DirectMessages extends Component {
     users: [],
     user: this.props.currentUser,
     usersRef: firebase.database().ref("users"),
-    presenceRef: firebase.database().ref("presense"),
+    presenceRef: firebase.database().ref("presence"),
     // online presence checked by firebase
     connectedRef: firebase.database().ref(".info/connected"),
   };
 
   componentDidMount() {
     if (this.state.user) {
-      this.addlisteners(this.state.user.uid);
+      this.addListeners(this.state.user.uid);
     }
   }
 
-  componentWillMount() {
+  componentWillUnmount() {
     this.removeListeners();
   }
 
@@ -31,7 +31,7 @@ class DirectMessages extends Component {
     this.state.connectedRef.off();
   };
 
-  addlisteners = (currentUserUid) => {
+  addListeners = (currentUserUid) => {
     let loadedUsers = [];
     // 1. Find all users and set the properties uid and stastus to user obj
     this.state.usersRef.on("child_added", (snap) => {
@@ -42,20 +42,22 @@ class DirectMessages extends Component {
         loadedUsers.push(user);
         this.setState({ users: loadedUsers });
       }
-      // https://firebase.google.com/docs/database/web/offline-capabilities
-      //2. Set the id of all "online" users to true in "presense" ref
-      this.state.connectedRef.on("value", (snap) => {
-        if (snap.val() === true) {
-          const ref = this.state.presenceRef.child(currentUserUid);
-          ref.set(true);
-          ref.onDisconnect().remove((err) => {
-            if (err !== null) {
-              console.error(err);
-            }
-          });
-        }
-      });
     });
+    // https://firebase.google.com/docs/database/web/offline-capabilities
+    //2. Set the id of all "online" users to true in "presense" ref
+    this.state.connectedRef.on("value", (snap) => {
+      const ref = this.state.presenceRef.child(currentUserUid);
+      if (snap.val() === true) {
+        ref.set(true);
+        // remove user on disconnection
+        ref.onDisconnect().remove((err) => {
+          if (err !== null) {
+            console.error(err);
+          }
+        });
+      }
+    });
+
     // Listen to new users as they added to the presense ref
     this.state.presenceRef.on("child_added", (snap) => {
       if (currentUserUid !== snap.key) {

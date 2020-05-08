@@ -83,7 +83,7 @@ class MetaPanel extends React.Component {
             onClick={this.setActiveIndex}
           >
             <Icon name="dropdown" />
-            <Icon name="info" />
+            <Icon name="user" />
             Created By
           </Accordion.Title>
           <Accordion.Content active={activeIndex === 2}>

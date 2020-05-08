@@ -73,7 +73,7 @@ class Login extends React.Component {
                 name="email"
                 icon="mail"
                 iconPosition="left"
-                placeholder="Email Address"
+                placeholder="testuser@email.com"
                 onChange={this.handleChange}
                 value={email}
                 className={this.handleInputError(errors, "email")}
@@ -85,7 +85,7 @@ class Login extends React.Component {
                 name="password"
                 icon="lock"
                 iconPosition="left"
-                placeholder="Password"
+                placeholder="test1234"
                 onChange={this.handleChange}
                 value={password}
                 className={this.handleInputError(errors, "password")}
